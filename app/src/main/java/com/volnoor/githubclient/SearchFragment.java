@@ -139,6 +139,10 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                     String name = jsonArray.getJSONObject(i).getString("name");
                     String description = jsonArray.getJSONObject(i).getString("description");
 
+                    if (description.equals("null")) {
+                        description = "No description";
+                    }
+
                     repositories.add(new Repository(name, description));
                 }
 

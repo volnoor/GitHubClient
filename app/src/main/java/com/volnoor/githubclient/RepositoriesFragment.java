@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,11 +26,17 @@ public class RepositoriesFragment extends Fragment {
     private static final String TAG = RepositoriesFragment.class.getSimpleName();
     private static final String ARG_USERNAME = "username";
 
+    private static final String URL = "https://api.github.com/users/";
+    private static final String REPOS = "/repos";
+
     private String username;
 
     private RecyclerView mRecyclerView;
-    private LinearLayoutManager mLinearLayoutManager;
+
+    private ArrayList<Repository> repositories;
     private RepositoryAdapter mAdapter;
+
+    private ProgressBar progressBar;
 
     public RepositoriesFragment() {
         // Required empty public constructor
@@ -65,15 +72,26 @@ public class RepositoriesFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_repositories, container, false);
 
         mRecyclerView = view.findViewById(R.id.rv_repositories);
-        mLinearLayoutManager = new LinearLayoutManager(getActivity());
+        LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        new LoadTask().execute("https://api.github.com/users/" + username + "/repos");
+        repositories = new ArrayList<>();
+        mAdapter = new RepositoryAdapter(repositories);
+        mRecyclerView.setAdapter(mAdapter);
+
+        progressBar = view.findViewById(R.id.pb_repositories);
+
+        new LoadTask().execute(URL + username + REPOS);
 
         return view;
     }
 
     private class LoadTask extends AsyncTask<String, Void, JSONArray> {
+        @Override
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
         @Override
         protected JSONArray doInBackground(String... strings) {
             JSONArray json = null;
@@ -96,20 +114,24 @@ public class RepositoriesFragment extends Fragment {
         @Override
         protected void onPostExecute(JSONArray jsonArray) {
             try {
-                ArrayList<Repository> repositoryArrayList = new ArrayList<>();
+                repositories.clear();
 
                 for (int i = 0; i < jsonArray.length(); i++) {
                     String name = jsonArray.getJSONObject(i).getString("name");
                     String description = jsonArray.getJSONObject(i).getString("description");
 
+                    if (description.equals("null")) {
+                        description = "No description";
+                    }
+
                     Repository repository = new Repository(name, description);
 
-                    repositoryArrayList.add(repository);
-                    Log.d(TAG, repository.getName() + ", " + repository.getDescription());
+                    repositories.add(repository);
                 }
 
-                mAdapter = new RepositoryAdapter(repositoryArrayList);
-                mRecyclerView.setAdapter(mAdapter);
+                mAdapter.notifyDataSetChanged();
+
+                progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
