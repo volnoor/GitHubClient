@@ -31,8 +31,6 @@ public class RepositoriesFragment extends Fragment {
 
     private String username;
 
-    private RecyclerView mRecyclerView;
-
     private ArrayList<Repository> repositories;
     private RepositoryAdapter mAdapter;
 
@@ -71,7 +69,7 @@ public class RepositoriesFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_repositories, container, false);
 
-        mRecyclerView = view.findViewById(R.id.rv_repositories);
+        RecyclerView mRecyclerView = view.findViewById(R.id.rv_repositories);
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 

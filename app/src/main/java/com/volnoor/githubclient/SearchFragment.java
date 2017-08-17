@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,6 +40,10 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
     private RepositoryAdapter mAdapter;
     private ArrayList<Repository> repositories;
+
+    private ProgressBar progressBar;
+
+    private SearchTask searchTask;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -81,6 +86,8 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         mAdapter = new RepositoryAdapter(repositories);
         mRecyclerView.setAdapter(mAdapter);
 
+        progressBar = view.findViewById(R.id.pb_search);
+
         return view;
     }
 
@@ -104,10 +111,17 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
         Log.d(TAG, url.toString());
 
-        new SearchTask().execute(url);
+        if (searchTask == null || searchTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
+            searchTask = new SearchTask();
+            searchTask.execute(url);
+        }
     }
 
     private class SearchTask extends AsyncTask<URL, Void, JSONObject> {
+        @Override
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+        }
 
         @Override
         protected JSONObject doInBackground(URL... urls) {
@@ -148,11 +162,10 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
                 mAdapter.notifyDataSetChanged();
 
+                progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
     }
 }
-
-// TODO only one asynctask at a time

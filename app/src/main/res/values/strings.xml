@@ -7,4 +7,5 @@
     <string name="sign_in">Sign in</string>
     <string name="repositories">Repositories</string>
     <string name="search">Search</string>
+    <string name="find_a_repository">Find a repository</string>
 </resources>
