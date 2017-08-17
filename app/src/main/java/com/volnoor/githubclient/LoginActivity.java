@@ -1,5 +1,6 @@
 package com.volnoor.githubclient;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -41,7 +42,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private class LoginTask extends AsyncTask<String, Void, JSONObject> {
-
         @Override
         protected JSONObject doInBackground(String... strings) {
             JSONObject json = null;
@@ -71,6 +71,15 @@ public class LoginActivity extends AppCompatActivity {
                 }
 
                 Log.d(TAG, jsonObject.toString());
+
+                try {
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    intent.putExtra("username", jsonObject.getString("login"));
+                    startActivity(intent);
+                    finish();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
