@@ -31,7 +31,7 @@ import okhttp3.Response;
 public class SearchFragment extends Fragment implements View.OnClickListener {
     private static final String TAG = SearchFragment.class.getSimpleName();
 
-    final static String GITHUB_BASE_URL =
+    static final String GITHUB_BASE_URL =
             "https://api.github.com/search/repositories";
 
     final static String PARAM_QUERY = "q";
@@ -44,6 +44,8 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
     private ProgressBar progressBar;
 
     private SearchTask searchTask;
+
+    private static final String SAVE_KEY = "save_key";
 
     public SearchFragment() {
         // Required empty public constructor
@@ -82,13 +84,24 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        repositories = new ArrayList<>();
+        if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_KEY)) {
+            repositories = savedInstanceState.getParcelableArrayList(SAVE_KEY);
+        } else {
+            repositories = new ArrayList<>();
+        }
+
         mAdapter = new RepositoryAdapter(repositories);
         mRecyclerView.setAdapter(mAdapter);
 
         progressBar = view.findViewById(R.id.pb_search);
 
         return view;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(SAVE_KEY, repositories);
+        super.onSaveInstanceState(outState);
     }
 
     @Override

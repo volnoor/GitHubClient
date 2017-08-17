@@ -36,6 +36,8 @@ public class RepositoriesFragment extends Fragment {
 
     private ProgressBar progressBar;
 
+    private static final String SAVE_KEY = "save_key";
+
     public RepositoriesFragment() {
         // Required empty public constructor
     }
@@ -73,15 +75,27 @@ public class RepositoriesFragment extends Fragment {
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        repositories = new ArrayList<>();
+        if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_KEY)) {
+            repositories = savedInstanceState.getParcelableArrayList(SAVE_KEY);
+        } else {
+            repositories = new ArrayList<>();
+        }
+
         mAdapter = new RepositoryAdapter(repositories);
         mRecyclerView.setAdapter(mAdapter);
 
         progressBar = view.findViewById(R.id.pb_repositories);
 
-        new LoadTask().execute(URL + username + REPOS);
+        if (repositories.isEmpty())
+            new LoadTask().execute(URL + username + REPOS);
 
         return view;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(SAVE_KEY, repositories);
+        super.onSaveInstanceState(outState);
     }
 
     private class LoadTask extends AsyncTask<String, Void, JSONArray> {
