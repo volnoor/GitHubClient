@@ -1,10 +1,13 @@
 package com.volnoor.githubclient;
 
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -25,6 +28,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername;
 
+    private LoginTask loginTask;
+    private ProgressDialog progressDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,24 +40,34 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void signIn(View v) {
-        Log.d(TAG, "signIn");
-
         String username = etUsername.getText().toString();
 
-        new LoginTask().execute(URL + username);
+        // Only one task at a time
+        if (loginTask == null || loginTask.isCancelled()) {
+            loginTask = new LoginTask();
+            loginTask.execute(URL + username);
+        }
     }
 
     private class LoginTask extends AsyncTask<String, Void, JSONObject> {
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(LoginActivity.this);
+            progressDialog.setMessage("Logging in...");
+            progressDialog.show();
+        }
+
         @Override
         protected JSONObject doInBackground(String... strings) {
             JSONObject json = null;
 
             try {
-                OkHttpClient client = new OkHttpClient();
                 Request request = new Request.Builder()
                         .url(strings[0])
                         .build();
-                Response response = client.newCall(request).execute();
+
+                Response response = new OkHttpClient().newCall(request).execute();
+
                 json = new JSONObject(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
                 Log.e(TAG, "" + e.getLocalizedMessage());
@@ -63,16 +79,33 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(JSONObject jsonObject) {
             if (jsonObject != null) {
-
+                // A JSON object with "message" is return if username is non-existent
                 if (jsonObject.has("message")) {
                     // Username doesn't exist
-                    Log.d(TAG, "message");
+                    new AlertDialog.Builder(LoginActivity.this)
+                            .setTitle("Error")
+                            .setMessage("This username doesn't exist")
+                            .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dialogInterface.cancel();
+                                }
+                            })
+                            .create()
+                            .show();
+
+                    progressDialog.dismiss();
+
+                    // Cancel AsyncTask
+                    cancel(false);
+
                     return;
                 }
 
-                Log.d(TAG, jsonObject.toString());
-
                 try {
+                    progressDialog.dismiss();
+
+                    // Start MainActivity
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     intent.putExtra("username", jsonObject.getString("login"));
                     startActivity(intent);
