@@ -1,16 +1,28 @@
 package com.volnoor.githubclient;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.util.ArrayList;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class RepositoriesFragment extends Fragment {
+    private static final String TAG = RepositoriesFragment.class.getSimpleName();
     private static final String ARG_USERNAME = "username";
 
     private String username;
@@ -56,12 +68,53 @@ public class RepositoriesFragment extends Fragment {
         mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        ArrayList<Repository> repositoryArrayList = new ArrayList<>();
-        repositoryArrayList.add(new Repository("hh", "ha"));
-        repositoryArrayList.add(new Repository("hy", "hk"));
-        mAdapter = new RepositoryAdapter(repositoryArrayList);
-        mRecyclerView.setAdapter(mAdapter);
+        new LoadTask().execute("https://api.github.com/users/" + username + "/repos");
 
         return view;
+    }
+
+    private class LoadTask extends AsyncTask<String, Void, JSONArray> {
+        @Override
+        protected JSONArray doInBackground(String... strings) {
+            JSONArray json = null;
+
+            try {
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url(strings[0])
+                        .build();
+                Response response = client.newCall(request).execute();
+                // Log.e(TAG, response.body().string());
+                // json = new JSONObject(response.body().string());
+                json = new JSONArray(response.body().string());
+                //  Log.e(TAG, "here we go"+ new JSONObject(response.body().string()).toString());
+            } catch (@NonNull IOException | JSONException e) {
+                Log.e(TAG, "" + e.getLocalizedMessage());
+            }
+
+            return json;
+        }
+
+        @Override
+        protected void onPostExecute(JSONArray jsonArray) {
+            try {
+                ArrayList<Repository> repositoryArrayList = new ArrayList<>();
+
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    String name = jsonArray.getJSONObject(i).getString("name");
+                    String description = jsonArray.getJSONObject(i).getString("description");
+
+                    Repository repository = new Repository(name, description);
+
+                    repositoryArrayList.add(repository);
+                    Log.d(TAG, repository.getName() + ", " + repository.getDescription());
+                }
+
+                mAdapter = new RepositoryAdapter(repositoryArrayList);
+                mRecyclerView.setAdapter(mAdapter);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
