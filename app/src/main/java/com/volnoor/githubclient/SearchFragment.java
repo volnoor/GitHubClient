@@ -37,9 +37,8 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
     private EditText etSearch;
 
-    private RecyclerView mRecyclerView;
-    private LinearLayoutManager mLinearLayoutManager;
     private RepositoryAdapter mAdapter;
+    private ArrayList<Repository> repositories;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -74,9 +73,13 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         Button button = view.findViewById(R.id.btn_search);
         button.setOnClickListener(this);
 
-        mRecyclerView = view.findViewById(R.id.rv_search);
-        mLinearLayoutManager = new LinearLayoutManager(getActivity());
+        RecyclerView mRecyclerView = view.findViewById(R.id.rv_search);
+        LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        repositories = new ArrayList<>();
+        mAdapter = new RepositoryAdapter(repositories);
+        mRecyclerView.setAdapter(mAdapter);
 
         return view;
     }
@@ -128,7 +131,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         @Override
         protected void onPostExecute(JSONObject jsonObject) {
             try {
-                ArrayList<Repository> repositoryArrayList = new ArrayList<>();
+                repositories.clear();
 
                 JSONArray jsonArray = jsonObject.getJSONArray("items");
 
@@ -136,16 +139,16 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                     String name = jsonArray.getJSONObject(i).getString("name");
                     String description = jsonArray.getJSONObject(i).getString("description");
 
-                    Repository repository = new Repository(name, description);
-
-                    repositoryArrayList.add(repository);
+                    repositories.add(new Repository(name, description));
                 }
 
-                mAdapter = new RepositoryAdapter(repositoryArrayList);
-                mRecyclerView.setAdapter(mAdapter);
+                mAdapter.notifyDataSetChanged();
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
     }
 }
+
+// TODO only one asynctask at a time
