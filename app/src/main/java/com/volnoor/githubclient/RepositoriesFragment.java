@@ -84,10 +84,8 @@ public class RepositoriesFragment extends Fragment {
                         .url(strings[0])
                         .build();
                 Response response = client.newCall(request).execute();
-                // Log.e(TAG, response.body().string());
-                // json = new JSONObject(response.body().string());
+
                 json = new JSONArray(response.body().string());
-                //  Log.e(TAG, "here we go"+ new JSONObject(response.body().string()).toString());
             } catch (@NonNull IOException | JSONException e) {
                 Log.e(TAG, "" + e.getLocalizedMessage());
             }

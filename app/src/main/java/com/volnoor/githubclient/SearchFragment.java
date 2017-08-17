@@ -1,12 +1,45 @@
 package com.volnoor.githubclient;
 
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 
-public class SearchFragment extends Fragment {
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class SearchFragment extends Fragment implements View.OnClickListener {
+    private static final String TAG = SearchFragment.class.getSimpleName();
+
+    final static String GITHUB_BASE_URL =
+            "https://api.github.com/search/repositories";
+
+    final static String PARAM_QUERY = "q";
+
+    private EditText etSearch;
+
+    private RecyclerView mRecyclerView;
+    private LinearLayoutManager mLinearLayoutManager;
+    private RepositoryAdapter mAdapter;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -34,6 +67,85 @@ public class SearchFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_search, container, false);
+        View view = inflater.inflate(R.layout.fragment_search, container, false);
+
+        etSearch = view.findViewById(R.id.et_search);
+
+        Button button = view.findViewById(R.id.btn_search);
+        button.setOnClickListener(this);
+
+        mRecyclerView = view.findViewById(R.id.rv_search);
+        mLinearLayoutManager = new LinearLayoutManager(getActivity());
+        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        return view;
+    }
+
+    @Override
+    public void onClick(View view) {
+        String searchQuery = etSearch.getText().toString();
+
+        Log.d(TAG, "onClick " + searchQuery);
+
+        Uri uri = Uri.parse(GITHUB_BASE_URL).buildUpon()
+                .appendQueryParameter(PARAM_QUERY, searchQuery)
+                .build();
+
+        URL url = null;
+        try {
+            url = new URL(uri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            Log.d(TAG, "problem with url creation");
+        }
+
+        Log.d(TAG, url.toString());
+
+        new SearchTask().execute(url);
+    }
+
+    private class SearchTask extends AsyncTask<URL, Void, JSONObject> {
+
+        @Override
+        protected JSONObject doInBackground(URL... urls) {
+            JSONObject json = null;
+
+            try {
+                Request request = new Request.Builder()
+                        .url(urls[0])
+                        .build();
+
+                Response response = new OkHttpClient().newCall(request).execute();
+
+                json = new JSONObject(response.body().string());
+            } catch (@NonNull IOException | JSONException e) {
+                Log.e(TAG, "" + e.getLocalizedMessage());
+            }
+
+            return json;
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject jsonObject) {
+            try {
+                ArrayList<Repository> repositoryArrayList = new ArrayList<>();
+
+                JSONArray jsonArray = jsonObject.getJSONArray("items");
+
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    String name = jsonArray.getJSONObject(i).getString("name");
+                    String description = jsonArray.getJSONObject(i).getString("description");
+
+                    Repository repository = new Repository(name, description);
+
+                    repositoryArrayList.add(repository);
+                }
+
+                mAdapter = new RepositoryAdapter(repositoryArrayList);
+                mRecyclerView.setAdapter(mAdapter);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
