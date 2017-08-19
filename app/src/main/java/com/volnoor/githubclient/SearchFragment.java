@@ -113,27 +113,32 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         // Check for internet connection
         ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        if (networkInfo == null && !networkInfo.isAvailable() && !networkInfo.isConnected()) {
+        if (networkInfo != null && networkInfo.isAvailable() && networkInfo.isConnected()) {
+            String searchQuery = etSearch.getText().toString();
+
+            if (searchQuery.length() < 1) {
+                showAlertDialog("Error", "Empty search request");
+                return;
+            }
+
+            Uri uri = Uri.parse(GITHUB_BASE_URL).buildUpon()
+                    .appendQueryParameter(PARAM_QUERY, searchQuery)
+                    .build();
+
+            URL url = null;
+            try {
+                url = new URL(uri.toString());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                showAlertDialog("Error", "Failed to create an URL");
+            }
+
+            if (searchTask == null || searchTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
+                searchTask = new SearchTask();
+                searchTask.execute(url);
+            }
+        } else {
             showAlertDialog("Error", "Please check your internet connection");
-            return;
-        }
-        String searchQuery = etSearch.getText().toString();
-
-        Uri uri = Uri.parse(GITHUB_BASE_URL).buildUpon()
-                .appendQueryParameter(PARAM_QUERY, searchQuery)
-                .build();
-
-        URL url = null;
-        try {
-            url = new URL(uri.toString());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            showAlertDialog("Error", "Failed to create an URL");
-        }
-
-        if (searchTask == null || searchTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
-            searchTask = new SearchTask();
-            searchTask.execute(url);
         }
     }
 
@@ -187,6 +192,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
             } catch (JSONException e) {
                 e.printStackTrace();
                 showAlertDialog("Error", "Error reading response");
+                progressBar.setVisibility(View.INVISIBLE);
             }
         }
 
