@@ -2,6 +2,7 @@ package com.volnoor.githubclient;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -20,12 +21,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
-    private static final String TAG = LoginActivity.class.getSimpleName();
-
     private static final String GITHUB_OAUTH = "https://github.com/login/oauth/access_token";
     private static final String CLIENT_ID = "306bb28c16631d720b1e";
     private static final String CLIENT_SECRET = "38b5f018c35ec7404ec5cd77ec3c94bd97491384";
     private static final String REDIRECT_URI = "githubclient://callback";
+    private static final String USER = "https://api.github.com/user";
 
     private ProgressDialog progressDialog;
 
@@ -88,6 +88,25 @@ public class LoginActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
+            // Get username using token
+            try {
+                String accessToken = json.getString("access_token");
+
+                url = HttpUrl.parse(USER).newBuilder()
+                        .addQueryParameter("access_token", accessToken);
+
+                request = new Request.Builder()
+                        .header("Accept", "application/json")
+                        .url(url.build().toString())
+                        .build();
+
+                Response response = client.newCall(request).execute();
+
+                json = new JSONObject(response.body().string());
+            } catch (JSONException | IOException e) {
+                e.printStackTrace();
+            }
+
             return json;
         }
 
@@ -96,11 +115,20 @@ public class LoginActivity extends AppCompatActivity {
             if (jsonObject != null) {
                 try {
                     progressDialog.dismiss();
-                    String accessToken = jsonObject.getString("access_token");
 
+                    // Get username from json
+                    String username = jsonObject.getString("login");
+
+                    // Save username to preferences
+                    SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
+                    SharedPreferences.Editor edit = prefs.edit();
+                    edit.putString("username", username);
+                    edit.apply();
+
+                    // Start MainActivity
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    intent.putExtra("access_token", accessToken);
                     startActivity(intent);
+                    finish();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

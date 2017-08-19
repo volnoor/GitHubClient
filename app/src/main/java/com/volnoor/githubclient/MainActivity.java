@@ -37,10 +37,6 @@ public class MainActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
 
-    private static final String TAG = MainActivity.class.getSimpleName();
-
-    private String username;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,9 +54,6 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
-
-        username = getIntent().getExtras().getString("username");
-        Log.d(TAG, username);
     }
 
     /**
@@ -78,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
             // getItem is called to instantiate the fragment for the given page.
             switch (position) {
                 case 0:
-                    return RepositoriesFragment.newInstance(username);
+                    return RepositoriesFragment.newInstance();
                 case 1:
                     return SearchFragment.newInstance();
                 default:

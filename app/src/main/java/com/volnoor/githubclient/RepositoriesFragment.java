@@ -1,5 +1,7 @@
 package com.volnoor.githubclient;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -24,13 +26,9 @@ import okhttp3.Response;
 
 public class RepositoriesFragment extends Fragment {
     private static final String TAG = RepositoriesFragment.class.getSimpleName();
-    private static final String ARG_USERNAME = "username";
 
-    private final String USER = "https://api.github.com/user";
     private static final String URL = "https://api.github.com/users/";
     private static final String REPOS = "/repos";
-
-    private String username;
 
     private ArrayList<Repository> repositories;
     private RepositoryAdapter mAdapter;
@@ -47,23 +45,15 @@ public class RepositoriesFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param username username.
      * @return A new instance of fragment RepositoriesFragment.
      */
-    public static RepositoriesFragment newInstance(String username) {
-        RepositoriesFragment fragment = new RepositoriesFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_USERNAME, username);
-        fragment.setArguments(args);
-        return fragment;
+    public static RepositoriesFragment newInstance() {
+        return new RepositoriesFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            username = getArguments().getString(ARG_USERNAME);
-        }
     }
 
     @Override
@@ -87,8 +77,13 @@ public class RepositoriesFragment extends Fragment {
 
         progressBar = view.findViewById(R.id.pb_repositories);
 
-        if (repositories.isEmpty())
+        if (repositories.isEmpty()) {
+            SharedPreferences prefs = getActivity().getSharedPreferences("prefs", Context.MODE_PRIVATE);
+            String username = prefs.getString("username", "");
+            Log.d(TAG, "username " + username);
             new LoadTask().execute(URL + username + REPOS);
+        }
+        //  new LoadTask().execute(URL + username + REPOS);
 
         return view;
     }
@@ -118,8 +113,10 @@ public class RepositoriesFragment extends Fragment {
 
                 json = new JSONArray(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
-                Log.e(TAG, "" + e.getLocalizedMessage());
+                Log.e(TAG, "here " + e.getLocalizedMessage());
             }
+
+            Log.d(TAG, "now: " + json.toString());
 
             return json;
         }
