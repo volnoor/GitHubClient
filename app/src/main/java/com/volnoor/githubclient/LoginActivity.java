@@ -18,6 +18,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -25,11 +28,13 @@ import okhttp3.Response;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = LoginActivity.class.getSimpleName();
 
-    private final String URL = "https://api.github.com/users/";
+    private final String USER = "https://api.github.com/user";
 
-    private String clientId = "306bb28c16631d720b1e";
-    private String clientSecret = "38b5f018c35ec7404ec5cd77ec3c94bd97491384";
+    private String CLIENT_ID = "306bb28c16631d720b1e";
+    private String CLIENT_SECRET = "38b5f018c35ec7404ec5cd77ec3c94bd97491384";
     private String redirectUri = "githubclient://callback";
+
+    public static final String GITHUB_OAUTH = "https://github.com/login/oauth/access_token";
 
     private EditText etUsername;
 
@@ -45,19 +50,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void signIn(View v) {
-//        String username = etUsername.getText().toString();
-//
-//        // Only one task at a time
-//        if (loginTask == null || loginTask.isCancelled()) {
-//            loginTask = new LoginTask();
-//            loginTask.execute(URL + username);
-//        }
-
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/login/oauth/authorize"
-                + "?client_id=" + clientId
-                + "&scope=user&redirect_uri=" + redirectUri));
+                + "?client_id=" + CLIENT_ID
+                + "&scope=user,public_repo"
+                + "&redirect_uri=" + redirectUri));
         startActivity(intent);
-
     }
 
     @Override
@@ -68,10 +65,54 @@ public class LoginActivity extends AppCompatActivity {
 
         if (uri != null && uri.toString().startsWith(redirectUri)) {
             Log.d(TAG, uri.toString());
-            String code = uri.getQueryParameter("code");
+            final String code = uri.getQueryParameter("code");
             Log.d(TAG, code);
 
-            //startActivity(new Intent(this, MainActivity.class));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    OkHttpClient client = new OkHttpClient();
+                    HttpUrl.Builder url = HttpUrl.parse(GITHUB_OAUTH).newBuilder();
+                    url.addQueryParameter("client_id", CLIENT_ID);
+                    url.addQueryParameter("client_secret", CLIENT_SECRET);
+                    url.addQueryParameter("code", code);
+
+                    String url_oauth = url.build().toString();
+
+                    final Request request = new Request.Builder()
+                            .header("Accept", "application/json")
+                            .url(url_oauth)
+                            .build();
+
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            //TODO error
+                        }
+
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            if (response.isSuccessful()) {
+
+                                String jsonData = response.body().string();
+
+                                try {
+                                    JSONObject jsonObject = new JSONObject(jsonData);
+                                    String access_token = jsonObject.getString("access_token");
+                                    Log.d(TAG, "auth_token " + access_token);
+
+                                    //  runOnUiThread();
+                                    //   startActivity(new Intent(this, MainActivity.class));
+
+                                } catch (JSONException exp) {
+
+                                    Log.e(TAG, "json exception: " + exp.getMessage());
+                                }
+                            }
+                        }
+                    });
+                }
+            }).start();
         }
     }
 
