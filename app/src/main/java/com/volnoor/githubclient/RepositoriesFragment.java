@@ -1,14 +1,15 @@
 package com.volnoor.githubclient;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,17 +26,14 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class RepositoriesFragment extends Fragment {
-    private static final String TAG = RepositoriesFragment.class.getSimpleName();
-
     private static final String URL = "https://api.github.com/users/";
     private static final String REPOS = "/repos";
+    private static final String SAVE_KEY = "save_key";
 
     private ArrayList<Repository> repositories;
     private RepositoryAdapter mAdapter;
 
     private ProgressBar progressBar;
-
-    private static final String SAVE_KEY = "save_key";
 
     public RepositoriesFragment() {
         // Required empty public constructor
@@ -66,6 +64,7 @@ public class RepositoriesFragment extends Fragment {
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
+        // No need to download if screen orientation changed
         if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_KEY)) {
             repositories = savedInstanceState.getParcelableArrayList(SAVE_KEY);
         } else {
@@ -77,13 +76,16 @@ public class RepositoriesFragment extends Fragment {
 
         progressBar = view.findViewById(R.id.pb_repositories);
 
+        // Download repositories list
         if (repositories.isEmpty()) {
             SharedPreferences prefs = getActivity().getSharedPreferences("prefs", Context.MODE_PRIVATE);
             String username = prefs.getString("username", "");
-            Log.d(TAG, "username " + username);
-            new LoadTask().execute(URL + username + REPOS);
+            if (username.equals("")) {
+                showAlertDialog("Error", "Error reading username");
+            } else {
+                new LoadTask().execute(URL + username + REPOS);
+            }
         }
-        //  new LoadTask().execute(URL + username + REPOS);
 
         return view;
     }
@@ -113,10 +115,9 @@ public class RepositoriesFragment extends Fragment {
 
                 json = new JSONArray(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
-                Log.e(TAG, "here " + e.getLocalizedMessage());
+                e.printStackTrace();
+                showAlertDialog("Error", "Error accessing to the server");
             }
-
-            Log.d(TAG, "now: " + json.toString());
 
             return json;
         }
@@ -144,7 +145,22 @@ public class RepositoriesFragment extends Fragment {
                 progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
+                showAlertDialog("Error", "Error reading response");
             }
         }
+    }
+
+    private void showAlertDialog(String title, String message) {
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                }).create();
+
+        alertDialog.show();
     }
 }

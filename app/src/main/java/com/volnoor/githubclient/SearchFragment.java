@@ -1,10 +1,14 @@
 package com.volnoor.githubclient;
 
+import android.content.DialogInterface;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -28,11 +32,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class SearchFragment extends Fragment implements View.OnClickListener {
-    private static final String TAG = SearchFragment.class.getSimpleName();
+import static android.content.Context.CONNECTIVITY_SERVICE;
 
-    static final String GITHUB_BASE_URL =
-            "https://api.github.com/search/repositories";
+public class SearchFragment extends Fragment implements View.OnClickListener {
+    static final String GITHUB_BASE_URL = "https://api.github.com/search/repositories";
 
     final static String PARAM_QUERY = "q";
 
@@ -84,6 +87,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         LinearLayoutManager mLinearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
+        // If screen orientation changed
         if (savedInstanceState != null && savedInstanceState.containsKey(SAVE_KEY)) {
             repositories = savedInstanceState.getParcelableArrayList(SAVE_KEY);
         } else {
@@ -106,9 +110,14 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
+        // Check for internet connection
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if (networkInfo == null && !networkInfo.isAvailable() && !networkInfo.isConnected()) {
+            showAlertDialog("Error", "Please check your internet connection");
+            return;
+        }
         String searchQuery = etSearch.getText().toString();
-
-        Log.d(TAG, "onClick " + searchQuery);
 
         Uri uri = Uri.parse(GITHUB_BASE_URL).buildUpon()
                 .appendQueryParameter(PARAM_QUERY, searchQuery)
@@ -119,10 +128,8 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
             url = new URL(uri.toString());
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            Log.d(TAG, "problem with url creation");
+            showAlertDialog("Error", "Failed to create an URL");
         }
-
-        Log.d(TAG, url.toString());
 
         if (searchTask == null || searchTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
             searchTask = new SearchTask();
@@ -149,7 +156,8 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
                 json = new JSONObject(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
-                Log.e(TAG, "" + e.getLocalizedMessage());
+                e.printStackTrace();
+                showAlertDialog("Error", "Error accessing to the server");
             }
 
             return json;
@@ -178,7 +186,23 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                 progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
+                showAlertDialog("Error", "Error reading response");
             }
         }
+
+    }
+
+    private void showAlertDialog(String title, String message) {
+        AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                }).create();
+
+        alertDialog.show();
     }
 }
