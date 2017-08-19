@@ -26,6 +26,7 @@ public class RepositoriesFragment extends Fragment {
     private static final String TAG = RepositoriesFragment.class.getSimpleName();
     private static final String ARG_USERNAME = "username";
 
+    private final String USER = "https://api.github.com/user";
     private static final String URL = "https://api.github.com/users/";
     private static final String REPOS = "/repos";
 
