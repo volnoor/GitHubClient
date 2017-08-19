@@ -3,6 +3,7 @@ package com.volnoor.githubclient;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -26,6 +27,10 @@ public class LoginActivity extends AppCompatActivity {
 
     private final String URL = "https://api.github.com/users/";
 
+    private String clientId = "306bb28c16631d720b1e";
+    private String clientSecret = "38b5f018c35ec7404ec5cd77ec3c94bd97491384";
+    private String redirectUri = "githubclient://callback";
+
     private EditText etUsername;
 
     private LoginTask loginTask;
@@ -40,12 +45,33 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void signIn(View v) {
-        String username = etUsername.getText().toString();
+//        String username = etUsername.getText().toString();
+//
+//        // Only one task at a time
+//        if (loginTask == null || loginTask.isCancelled()) {
+//            loginTask = new LoginTask();
+//            loginTask.execute(URL + username);
+//        }
 
-        // Only one task at a time
-        if (loginTask == null || loginTask.isCancelled()) {
-            loginTask = new LoginTask();
-            loginTask.execute(URL + username);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/login/oauth/authorize"
+                + "?client_id=" + clientId
+                + "&scope=user&redirect_uri=" + redirectUri));
+        startActivity(intent);
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Uri uri = getIntent().getData();
+
+        if (uri != null && uri.toString().startsWith(redirectUri)) {
+            Log.d(TAG, uri.toString());
+            String code = uri.getQueryParameter("code");
+            Log.d(TAG, code);
+
+            //startActivity(new Intent(this, MainActivity.class));
         }
     }
 
