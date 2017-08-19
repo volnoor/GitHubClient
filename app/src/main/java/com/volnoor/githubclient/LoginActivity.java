@@ -38,7 +38,7 @@ public class LoginActivity extends AppCompatActivity {
     public void signIn(View v) {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/login/oauth/authorize"
                 + "?client_id=" + CLIENT_ID
-                + "&scope=user,public_repo"
+                + "&scope=user,public_repo" // Permission to read/update
                 + "&redirect_uri=" + REDIRECT_URI));
         startActivity(intent);
     }
@@ -49,6 +49,7 @@ public class LoginActivity extends AppCompatActivity {
 
         Uri uri = getIntent().getData();
 
+        // If authorized from a browser
         if (uri != null && uri.toString().startsWith(REDIRECT_URI)) {
             String code = uri.getQueryParameter("code");
 
@@ -66,6 +67,7 @@ public class LoginActivity extends AppCompatActivity {
 
         @Override
         protected JSONObject doInBackground(String... strings) {
+            // Getting json with access token
             HttpUrl.Builder url = HttpUrl.parse(GITHUB_OAUTH).newBuilder()
                     .addQueryParameter("client_id", CLIENT_ID)
                     .addQueryParameter("client_secret", CLIENT_SECRET)
@@ -92,14 +94,16 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(JSONObject jsonObject) {
             if (jsonObject != null) {
-                String access_token = null;
                 try {
                     progressDialog.dismiss();
-                    access_token = jsonObject.getString("access_token");
+                    String accessToken = jsonObject.getString("access_token");
+
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    intent.putExtra("access_token", accessToken);
+                    startActivity(intent);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                Log.d(TAG, "auth_token " + access_token);
             }
         }
     }
