@@ -26,6 +26,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class RepositoriesFragment extends Fragment {
+
     private static final String URL = "https://api.github.com/users/";
     private static final String REPOS = "/repos";
     private static final String SAVE_KEY = "save_key";
@@ -81,7 +82,7 @@ public class RepositoriesFragment extends Fragment {
             SharedPreferences prefs = getActivity().getSharedPreferences("prefs", Context.MODE_PRIVATE);
             String username = prefs.getString("username", "");
             if (username.equals("")) {
-                showAlertDialog("Error", "Error reading username");
+                showAlertDialog(getString(R.string.error), "Error reading username");
             } else {
                 new LoadTask().execute(URL + username + REPOS);
             }
@@ -92,10 +93,12 @@ public class RepositoriesFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        // Save list that was downloaded
         outState.putParcelableArrayList(SAVE_KEY, repositories);
         super.onSaveInstanceState(outState);
     }
 
+    // Takes URL, return json with repositories
     private class LoadTask extends AsyncTask<String, Void, JSONArray> {
         @Override
         protected void onPreExecute() {
@@ -116,7 +119,7 @@ public class RepositoriesFragment extends Fragment {
                 json = new JSONArray(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Error accessing to the server");
+                showAlertDialog(getString(R.string.error), getString(R.string.error_acc_server));
             }
 
             return json;
@@ -125,8 +128,6 @@ public class RepositoriesFragment extends Fragment {
         @Override
         protected void onPostExecute(JSONArray jsonArray) {
             try {
-                repositories.clear();
-
                 for (int i = 0; i < jsonArray.length(); i++) {
                     String name = jsonArray.getJSONObject(i).getString("name");
                     String description = jsonArray.getJSONObject(i).getString("description");
@@ -145,7 +146,7 @@ public class RepositoriesFragment extends Fragment {
                 progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Error reading response");
+                showAlertDialog(getString(R.string.error), getString(R.string.error_reading_response));
             }
         }
     }
@@ -154,7 +155,7 @@ public class RepositoriesFragment extends Fragment {
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();

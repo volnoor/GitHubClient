@@ -24,6 +24,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
+
     private static final String GITHUB_OAUTH = "https://github.com/login/oauth/access_token";
     private static final String GITHUB_AUTHORIZE = "https://github.com/login/oauth/authorize";
     private static final String CLIENT_ID = "306bb28c16631d720b1e";
@@ -37,21 +38,6 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-    }
-
-    public void signIn(View v) {
-        // Check for internet connection
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isAvailable() && networkInfo.isConnected()) {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_AUTHORIZE
-                    + "?client_id=" + CLIENT_ID
-                    + "&scope=user,public_repo" // Permission to read/update
-                    + "&redirect_uri=" + REDIRECT_URI));
-            startActivity(intent);
-        } else {
-            showAlertDialog("Error", "Please check your internet connection");
-        }
     }
 
     @Override
@@ -68,12 +54,27 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    public void signIn(View v) {
+        // Check for internet connection
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isAvailable() && networkInfo.isConnected()) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_AUTHORIZE
+                    + "?client_id=" + CLIENT_ID
+                    + "&scope=user,public_repo" // Permission to read/update
+                    + "&redirect_uri=" + REDIRECT_URI));
+            startActivity(intent);
+        } else {
+            showAlertDialog(getString(R.string.error), getString(R.string.check_int_con));
+        }
+    }
+
     // Input: authorization code, output: json object with user data
     private class LoginTask extends AsyncTask<String, Void, JSONObject> {
         @Override
         protected void onPreExecute() {
             progressDialog = new ProgressDialog(LoginActivity.this);
-            progressDialog.setMessage("Logging in...");
+            progressDialog.setMessage(getString(R.string.logging_in));
             progressDialog.show();
         }
 
@@ -116,7 +117,7 @@ public class LoginActivity extends AppCompatActivity {
                 json = new JSONObject(response.body().string());
             } catch (IOException | JSONException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Error getting access");
+                showAlertDialog(getString(R.string.error), getString(R.string.error_getting_access));
             }
 
             return json;
@@ -143,7 +144,7 @@ public class LoginActivity extends AppCompatActivity {
                     finish();
                 } catch (JSONException e) {
                     e.printStackTrace();
-                    showAlertDialog("Error", "Error reading response");
+                    showAlertDialog(getString(R.string.error), getString(R.string.error_reading_response));
                 }
             }
         }
@@ -153,7 +154,7 @@ public class LoginActivity extends AppCompatActivity {
         AlertDialog alertDialog = new AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();

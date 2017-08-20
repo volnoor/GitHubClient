@@ -13,6 +13,7 @@ import java.util.ArrayList;
  */
 
 public class RepositoryAdapter extends RecyclerView.Adapter<RepositoryAdapter.RepositoryHolder> {
+
     private ArrayList<Repository> mRepositories;
 
     public RepositoryAdapter(ArrayList<Repository> repositories) {

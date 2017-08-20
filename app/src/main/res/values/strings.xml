@@ -7,4 +7,13 @@
     <string name="repositories">Repositories</string>
     <string name="search">Search</string>
     <string name="find_a_repository">Find a repository</string>
+    <string name="logging_in">Logging in&#8230;</string>
+    <string name="error">Error</string>
+    <string name="check_int_con">Please check your internet connection</string>
+    <string name="error_getting_access">Error getting access</string>
+    <string name="error_reading_response">Error reading response</string>
+    <string name="ok">OK</string>
+    <string name="error_acc_server">Error accessing to the server"</string>
+    <string name="empty_search">Empty search request</string>
+    <string name="failed_create_url">Failed to create an URL</string>
 </resources>

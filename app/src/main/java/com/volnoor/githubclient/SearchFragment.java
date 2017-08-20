@@ -11,7 +11,6 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,9 +34,10 @@ import okhttp3.Response;
 import static android.content.Context.CONNECTIVITY_SERVICE;
 
 public class SearchFragment extends Fragment implements View.OnClickListener {
-    static final String GITHUB_BASE_URL = "https://api.github.com/search/repositories";
 
-    final static String PARAM_QUERY = "q";
+    private static final String GITHUB_BASE_URL = "https://api.github.com/search/repositories";
+    private static final String PARAM_QUERY = "q";
+    private static final String SAVE_KEY = "save_key";
 
     private EditText etSearch;
 
@@ -47,8 +47,6 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
     private ProgressBar progressBar;
 
     private SearchTask searchTask;
-
-    private static final String SAVE_KEY = "save_key";
 
     public SearchFragment() {
         // Required empty public constructor
@@ -104,6 +102,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        // Save downloaded list
         outState.putParcelableArrayList(SAVE_KEY, repositories);
         super.onSaveInstanceState(outState);
     }
@@ -116,8 +115,9 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         if (networkInfo != null && networkInfo.isAvailable() && networkInfo.isConnected()) {
             String searchQuery = etSearch.getText().toString();
 
+            // If nothing is entered
             if (searchQuery.length() < 1) {
-                showAlertDialog("Error", "Empty search request");
+                showAlertDialog(getString(R.string.error), getString(R.string.empty_search));
                 return;
             }
 
@@ -130,7 +130,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                 url = new URL(uri.toString());
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Failed to create an URL");
+                showAlertDialog(getString(R.string.error), getString(R.string.failed_create_url));
             }
 
             if (searchTask == null || searchTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
@@ -138,7 +138,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                 searchTask.execute(url);
             }
         } else {
-            showAlertDialog("Error", "Please check your internet connection");
+            showAlertDialog(getString(R.string.error), getString(R.string.check_int_con));
         }
     }
 
@@ -162,7 +162,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                 json = new JSONObject(response.body().string());
             } catch (@NonNull IOException | JSONException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Error accessing to the server");
+                showAlertDialog(getString(R.string.error), getString(R.string.error_acc_server));
             }
 
             return json;
@@ -191,7 +191,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
                 progressBar.setVisibility(View.INVISIBLE);
             } catch (JSONException e) {
                 e.printStackTrace();
-                showAlertDialog("Error", "Error reading response");
+                showAlertDialog(getString(R.string.error), getString(R.string.error_reading_response));
                 progressBar.setVisibility(View.INVISIBLE);
             }
         }
@@ -202,7 +202,7 @@ public class SearchFragment extends Fragment implements View.OnClickListener {
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity())
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                .setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.cancel();
