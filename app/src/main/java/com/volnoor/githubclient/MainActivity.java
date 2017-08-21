@@ -1,5 +1,6 @@
 package com.volnoor.githubclient;
 
+import android.content.SharedPreferences;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -54,6 +55,10 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+
+        // Set title
+        SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
+        setTitle(prefs.getString("username", ""));
     }
 
     /**
